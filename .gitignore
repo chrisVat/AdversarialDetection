@@ -1,5 +1,6 @@
 data/*
-
+adv_datasets/*
+Adv_Dataset_Backup/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

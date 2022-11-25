@@ -9,6 +9,7 @@ import torchvision
 import torchvision.transforms as transforms
 import os
 import argparse
+import networks.resnet as resnet
 
 # makes things look nice
 from progress_bar import progress_bar
@@ -45,6 +46,8 @@ def get_model(model:str, num_classes:int):
         result = torchvision.models.resnet18(num_classes=num_classes)
         result.conv1 = nn.Conv2d(3, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
         result.maxpool = nn.Identity()
+    if model == 'resnet32-cifar10':
+        result = resnet.resnet32()
     elif model == 'resnet50':
         result = torchvision.models.resnet50(weights=None, num_classes=num_classes)
     elif model == 'vgg11':
@@ -66,6 +69,7 @@ def train(epoch, max_epochs, net, trainloader, optimizer, scheduler, criterion, 
         loss = criterion(outputs, targets)
         loss.backward()
         optimizer.step()
+        scheduler.step()
         train_loss += loss.item()
         _, predicted = outputs.max(1)
         total += targets.size(0)
@@ -73,7 +77,7 @@ def train(epoch, max_epochs, net, trainloader, optimizer, scheduler, criterion, 
 
         progress_bar(epoch, max_epochs, batch_idx, len(trainloader), 'Loss: %.3f   Acc: %.3f%%'
                      % (train_loss/(batch_idx+1), 100.*correct/total))
-    scheduler.step()
+    # scheduler.step()
 
 
 def test(epoch, max_epochs, net, testloader, criterion, device):
@@ -102,8 +106,8 @@ def fit_model(model, trainloader, testloader, device, epochs:int, learning_rate:
     best_name = ""
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=1e-4)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size, sched_decay)
-    # scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, 0.1, epochs=epochs, steps_per_epoch=len(trainloader))
+    # scheduler = optim.lr_scheduler.StepLR(optimizer, step_size, sched_decay)
+    scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, 0.1, epochs=epochs, steps_per_epoch=len(trainloader))
     
     for epoch in range(epochs):
         train(epoch, epochs, model, trainloader, optimizer, scheduler, criterion, device)
@@ -134,12 +138,12 @@ def main(dataset:str, model_name:str, epochs:int, learning_rate:float, batch_siz
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Train a model on a dataset')
     parser.add_argument('--dataset', type=str, default='cifar10', help='Dataset to train on')
-    parser.add_argument('--model', type=str, default='resnet18', help='Model to train')
+    parser.add_argument('--model', type=str, default='resnet32-cifar10', help='Model to train')
     parser.add_argument('--output_prefix', type=str, default='', help='Prefix to add to model name, to avoid overlapping experiments.')
     parser.add_argument('--epochs', type=int, default=100, help='Number of epochs to train')
     parser.add_argument('--learning_rate', type=float, default=0.01, help='Learning rate')
     parser.add_argument('--batch_size', type=int, default=128, help='Batch size')
-    parser.add_argument('--sched_decay', type=float, default=0.75, help='Scheduler Decay')
+    parser.add_argument('--sched_decay', type=float, default=0.5, help='Scheduler Decay')
     parser.add_argument('--step_size', type=int, default=25, help='Step Size For Scheduler')
     args = parser.parse_args()
     main(args.dataset, args.model, args.epochs, args.learning_rate, args.batch_size, args.step_size, args.sched_decay, args.output_prefix)
