@@ -64,18 +64,18 @@ def save_image(img, img_prefix, img_num, path, mapping, target, actual_class, mo
     mapping["y"].append(target)
     mapping["class"].append(actual_class)
     mapping["model_pred"].append(model_pred)
-    return img_num+1, mapping
+    
 
 
-def fgsm_attack(image, epsilon, data_grad):
-    # Collect the element-wise sign of the data gradient
-    sign_data_grad = data_grad.sign()
-    # Create the perturbed image by adjusting each pixel of the input image
-    perturbed_image = image + epsilon*sign_data_grad
-    # Adding clipping to maintain [0,1] range
-    perturbed_image = torch.clamp(perturbed_image, 0, 1)
-    # Return the perturbed image
-    return perturbed_image
+# def fgsm_attack(image, epsilon, data_grad):
+#     # Collect the element-wise sign of the data gradient
+#     sign_data_grad = data_grad.sign()
+#     # Create the perturbed image by adjusting each pixel of the input image
+#     perturbed_image = image + epsilon*sign_data_grad
+#     # Adding clipping to maintain [0,1] range
+#     perturbed_image = torch.clamp(perturbed_image, 0, 1)
+#     # Return the perturbed image
+#     return perturbed_image
 
 
 def generate_dataset_art(net, dataloader, technique, device, img_prefix:str, path:str):
@@ -92,8 +92,10 @@ def generate_dataset_art(net, dataloader, technique, device, img_prefix:str, pat
     img_num = 0
     for batch_idx, (input, target) in enumerate(dataloader):
         adv = attack.generate(x=input.numpy(), y=target.numpy())
-        img_num, results = save_image(adv, img_prefix, img_num, path, results, target, 1)
-        img_num, results = save_image(input.numpy(), img_prefix, img_num, path, results, target, 0)
+        save_image(adv, img_prefix, img_num, path, results, target, 1)
+        img_num += 1 
+        save_image(input.numpy(), img_prefix, img_num, path, results, target, 0)
+        img_num += 1
         progress_bar(1, 1, batch_idx, len(dataloader), '%d / %d' % (batch_idx, len(dataloader)))
     df = pd.DataFrame.from_dict(results)
     pd.save_csv(df, path + "/mapping.csv")
@@ -141,8 +143,10 @@ def generate_dataset_fb(net, dataloader, technique, device, img_prefix:str, path
                 # view_prediction(net, inputs, targets[0], prefix='original: ')
                 o_pred = get_prediction(net, inputs)
                 a_pred = get_prediction(net, clipped_advs[i])
-                img_num, results = save_image(clipped_advs[i].cpu().numpy(), img_prefix, img_num, path, results, targets.cpu().item(), 1, a_pred)
-                img_num, results = save_image(inputs[0].cpu().numpy(), img_prefix, img_num, path, results, targets.cpu().item(), 0, o_pred)
+                save_image(clipped_advs[i].cpu().numpy(), img_prefix, img_num, path, results, targets.cpu().item(), 1, a_pred)
+                img_num += 1
+                save_image(inputs[0].cpu().numpy(), img_prefix, img_num, path, results, targets.cpu().item(), 0, o_pred)
+                img_num += 1
                 break
         progress_bar(1, 1, batch_idx, len(dataloader), '%d / %d' % (batch_idx, len(dataloader)))
     df = pd.DataFrame.from_dict(results, orient='columns')
