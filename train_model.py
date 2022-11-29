@@ -143,8 +143,8 @@ if __name__ == "__main__":
     parser.add_argument('--epochs', type=int, default=100, help='Number of epochs to train')
     parser.add_argument('--learning_rate', type=float, default=0.01, help='Learning rate')
     parser.add_argument('--batch_size', type=int, default=128, help='Batch size')
-    # parser.add_argument('--sched_decay', type=float, default=0.5, help='Scheduler Decay')
-    # parser.add_argument('--step_size', type=int, default=25, help='Step Size For Scheduler')
+    parser.add_argument('--sched_decay', type=float, default=0.5, help='Scheduler Decay')
+    parser.add_argument('--step_size', type=int, default=25, help='Step Size For Scheduler')
     args = parser.parse_args()
     main(args.dataset, args.model, args.epochs, args.learning_rate, args.batch_size, args.step_size, args.sched_decay, args.output_prefix)
 
