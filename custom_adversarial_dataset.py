@@ -1,21 +1,28 @@
 import pandas as pd
 from PIL import Image
-
+import torch
+import torchvision
 from torchvision import transforms
 from torch.utils.data.dataset import Dataset
+import io
 
 class AdversarialDataset(Dataset):
-	def __init__(self, csv_path:str, data_path:str):
-		self.to_tensor = transforms.ToTensor()
+	def __init__(self, csv_path:str, data_path:str, transform = None):
+		self.transform = transform 
 		self.data_info = pd.read_csv(csv_path)
-		self.data_len = len(self.data_info.index)
+		self.data_len = len(self.data_info)
 		self.data_path = data_path
 
 	def __getitem__(self, index):
-		fetched_row = self.data_info.iloc[index]
-		img_as_tensor = self.to_tensor(Image.open(self.data_path + fetched_row[1]))
+		if torch.is_tensor(index):
+			index = index.tolist()
 
-		return img_as_tensor, fetched_row[2]
+		fetched_row = self.data_info.iloc[index]
+		img = torchvision.io.read_image(self.data_path + "/" + fetched_row[1]).float()
+		target = fetched_row[3]
+		if self.transform:
+			img = self.transform(img)
+		return img, target
 
 
 	def __len__(self):

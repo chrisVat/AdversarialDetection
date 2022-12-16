@@ -28,7 +28,7 @@ This section describes the files and important code snippets to help understand 
 
 ### generate_aversarial_dataset.py
 
-1. For help on how to run the file, run the following command: `python generate_adversarial_dataset.py`. The file arguments allow for configuring the dataset and model for which an attack technique should be used.
+1. For help on how to run the file, run the following command: `python generate_adversarial_dataset.py --help`. The file arguments allow for configuring the dataset and model for which an attack technique should be used.
 
 1. `generate_dataset_<library>` method is used to run attack for a given model and dataset. For all images in the dataset two versions of it are stored, one modified after the attack and one original.
 

@@ -1,6 +1,9 @@
 data/*
 adv_datasets/*
 Adv_Dataset_Backup/*
+trained_models/cifar10/*
+trained_models/ciless/*
+trained_models/best_models/vit/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
