@@ -93,6 +93,7 @@ def get_model(model:str, num_classes:int, load=False):
         vit.head = get_MLP(768, num_classes) # nn.Sequential(nn.Linear(768, 1000), nn.Linear(1000, 500), nn.Linear(500, 100), nn.Linear(100, num_classes))
         if load:
             vit.head.load_state_dict(torch.load('trained_models/best_models/vit_embedding_mlp/ciless_pretrained_vit_embedding_mlp_342.pth'))
+            vit.load_state_dict(torch.load('trained_models/best_models/vit_embedding_mlp/ciless_vit_pretrained_mlp_joint_train_initial_85.pth'))
         return vit
     elif model == 'beit':
         beit = timm.create_model('beit_base_patch16_224', pretrained=True, num_classes=num_classes)
@@ -203,7 +204,7 @@ if __name__ == "__main__":
     parser.add_argument('--batch_size', type=int, default=32, help='Batch size')
     parser.add_argument('--steps_per_update', type=int, default=4, help='Number of steps per each epoch (For minibatching to save memory)')
     parser.add_argument('--sched_decay', type=float, default=0.5, help='Scheduler Decay')
-    parser.add_argument('--step_size', type=int, default=30, help='Step Size For Scheduler')
+    parser.add_argument('--step_size', type=int, default=50, help='Step Size For Scheduler')
     parser.add_argument('--load', type=bool, default=True, help='Load best model')
     args = parser.parse_args()
     main(args.dataset, args.model, args.epochs, args.learning_rate, args.batch_size, args.step_size, args.sched_decay, args.output_prefix, args.steps_per_update, args.load)
