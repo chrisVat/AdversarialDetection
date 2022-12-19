@@ -93,7 +93,7 @@ def get_model(model:str, num_classes:int, load=False):
         vit.head = get_MLP(768, num_classes) # nn.Sequential(nn.Linear(768, 1000), nn.Linear(1000, 500), nn.Linear(500, 100), nn.Linear(100, num_classes))
         if load:
             vit.head.load_state_dict(torch.load('trained_models/best_models/vit_embedding_mlp/ciless_pretrained_vit_embedding_mlp_342.pth'))
-            vit.load_state_dict(torch.load('trained_models/best_models/vit_embedding_mlp/ciless_vit_pretrained_mlp_joint_train_initial_85.pth'))
+            vit.load_state_dict(torch.load('trained_models/best_models/vit_embedding_mlp/ciless_vit_pretrained_mlp_joint_train_initial_106.pth'))
         return vit
     elif model == 'beit':
         beit = timm.create_model('beit_base_patch16_224', pretrained=True, num_classes=num_classes)
