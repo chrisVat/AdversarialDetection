@@ -8,7 +8,7 @@ import os
 import argparse
 import networks.resnet as resnet
 import numpy as np
-from art.attacks.evasion import BrendelBethgeAttack
+# from art.attacks.evasion import BrendelBethgeAttack
 from art.attacks.evasion import FastGradientMethod
 from art.estimators.classification import PyTorchClassifier
 import foolbox as fb
@@ -45,7 +45,7 @@ def get_dataset(name):
 def get_model(model:str):
     if model == 'resnet32-cifar10':
         result = resnet.resnet32()
-        result.load_state_dict(torch.load('./trained_models/best_models/resnet32-cifar10/cifar10_resnet32-cifar10_99.pth'), strict=True)
+        result.load_state_dict(torch.load('./trained_models/best_models/resnet32-cifar10/cifar10_resnet32-cifar10_99.pth', map_location=torch.device('cpu')), strict=True)
         result.eval()
     else:
         raise ValueError('Unknown model: {}'.format(model))
@@ -83,7 +83,8 @@ def generate_dataset_art(net, dataloader, technique, device, img_prefix:str, pat
     results = {"file": [], "y": [], "class": []}
 
     if technique == 'bb':
-        attack = BrendelBethgeAttack(estimator=classifier)
+        pass
+        # attack = BrendelBethgeAttack(estimator=classifier)
     elif technique == 'fgsm':
         attack = FastGradientMethod(estimator=classifier, eps=0.01, eps_step=0.1, minimal=True)
     else:
@@ -157,6 +158,7 @@ def main(dataset:str, model_name:str, technique:str, img_prefix:str, dataset_pat
     print("CUDA Available: ", torch.cuda.is_available())
     dataset_path+= "_" + technique
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
     trainloader, testloader, _ = get_dataset(dataset)
     
     model = get_model(model_name)

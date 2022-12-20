@@ -57,13 +57,20 @@ def get_dataset(name, batch_size=1):
     return trainloader, testloader, classes
 
 
-def save_embedding(img, img_prefix, img_num, path, mapping, target, actual_class, model_pred):
+def save_embedding(img, img_prefix, img_num, path, mapping, target, alternate_embeddings):
     np.save(path + "/" + img_prefix + str(img_num) + ".npy", img.cpu().detach().numpy())
     mapping["file"].append(img_prefix + str(img_num) + ".npy")
     mapping["y"].append(target)
-    mapping["class"].append(actual_class)
-    mapping["model_pred"].append(model_pred)
+    
+    if len(alternate_embeddings) != 0:
+        file_names = {}
+        for name, embedding in alternate_embeddings.items():
+            file_name = img_prefix + str(img_num) + "_" + name + ".npy"
+            np.save(path + "/" + file_name, embedding.cpu().detach().numpy())
+            file_names[name] = file_name
 
+        mapping["alternate_embeddings"].append(file_names)
+    print(mapping)
 
 def get_model(model:str, num_classes:int, load=True):
     if model == 'resnet18':
@@ -72,6 +79,7 @@ def get_model(model:str, num_classes:int, load=True):
         result.maxpool = nn.Identity()
     if model == 'resnet32-cifar10':
         result = resnet.resnet32()
+        result.load_state_dict(torch.load('./trained_models/best_models/resnet32-cifar10/cifar10_resnet32-cifar10_99.pth', map_location=torch.device('cpu')), strict=True)
     elif model == 'resnet50':
         result = torchvision.models.resnet50(weights=None, num_classes=num_classes)
     elif model == 'vgg11':
@@ -82,7 +90,7 @@ def get_model(model:str, num_classes:int, load=True):
         vit = timm.create_model('vit_base_patch16_224', pretrained=True, num_classes=num_classes)
         if load:
             vit.head = nn.Linear(768, 10)
-            vit.load_state_dict(torch.load('trained_models/best_models/vit/cifar10_vit_30.pth'))
+            vit.load_state_dict(torch.load('trained_models/best_models/vit/cifar10_vit_30.pth', map_location=torch.device('cpu')))
         for param in vit.parameters():
             param.requires_grad = False
         vit.head = nn.Identity()
@@ -94,37 +102,51 @@ def get_model(model:str, num_classes:int, load=True):
         beit.head = get_MLP(768, num_classes)
         # vit.head = nn.Sequential(nn.Linear(768, 1000), nn.Linear(1000, 500), nn.Linear(500, 100), nn.Linear(100, num_classes))
         return beit
+    return result
 
 
 
-def generate_dataset_fb(net, dataloader, device, img_prefix:str, path:str):
-    results = {"file": [], "y": [], "class": [], "model_pred": []}
+def generate_dataset_fb(net, dataloader, device, img_prefix:str, path:str, alternate_models):
+    results = {"file": [], "y": [], "alternate_embeddings":[]}
     eps = []
     img_num = 0
     for batch_idx, (inputs, targets) in enumerate(dataloader):
         inputs, targets = inputs.to(device), targets.to(device)
         embedding = net(inputs)
-        save_embedding(embedding, img_prefix, img_num, path, results, targets.cpu().item(), 1, 1)
+        alternate_embeddings = dict(map(lambda item: (item[0], item[1](inputs)), alternate_models.items()))
+        save_embedding(embedding, img_prefix, img_num, path, results, targets.cpu().item(), alternate_embeddings)
         img_num+=1
     
     df = pd.DataFrame.from_dict(results, orient='columns')
     df.to_csv(path + "/mapping.csv")
 
 
-def main(dataset:str, model_name:str, img_prefix:str, dataset_path:str):
+def main(dataset:str, model_name:str, img_prefix:str, dataset_path:str, alternate_models):
     print("CUDA Available: ", torch.cuda.is_available())
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     trainloader, testloader, classes = get_dataset(dataset)    
     model = get_model(model_name, len(classes))
     model.to(device)
     
+    alternate_models_torch = {}
+    if alternate_models is not None:
+        for alternate_model in alternate_models:
+            m = get_model(alternate_model, len(classes))
+            m.to(device)
+            alternate_models_torch[alternate_model] = m 
+
     os.makedirs(dataset_path + "_train", exist_ok=True)
     os.makedirs(dataset_path + "_test", exist_ok=True)
     
     model.train()
-    generate_dataset_fb(model, trainloader, device, img_prefix, dataset_path + "_train")
+    for _, m in alternate_models_torch.items():
+        m.train()
+    generate_dataset_fb(model, trainloader, device, img_prefix, dataset_path + "_train", alternate_models_torch)
+
     model.eval()
-    generate_dataset_fb(model, testloader, device, img_prefix, dataset_path + "_test")
+    for _, m in alternate_models_torch.items():
+        m.eval()
+    generate_dataset_fb(model, testloader, device, img_prefix, dataset_path + "_test", alternate_models_torch)
 
 
 if __name__ == "__main__":
@@ -133,7 +155,8 @@ if __name__ == "__main__":
     parser.add_argument('--model', type=str, default='vit', help='Model')
     parser.add_argument('--img_prefix', type=str, default='ciless_emb_', help='')
     parser.add_argument('--dataset_path', type=str, default='./adv_datasets/ciless_embeddings_vit_pretrain', help='where to save the dataset')
+    parser.add_argument('--alternate_models', nargs='+', type=str, help='join multiple model embeddings with original model embeddings')
     args = parser.parse_args()
-    main(args.dataset, args.model, args.img_prefix, args.dataset_path)
+    main(args.dataset, args.model, args.img_prefix, args.dataset_path, args.alternate_models)
 
 
