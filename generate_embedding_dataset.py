@@ -154,8 +154,8 @@ if __name__ == "__main__":
     parser.add_argument('--dataset', type=str, default='ciless', help='Dataset')
     parser.add_argument('--model', type=str, default='vit', help='Model')
     parser.add_argument('--img_prefix', type=str, default='ciless_emb_', help='')
-    parser.add_argument('--dataset_path', type=str, default='./adv_datasets/ciless_embeddings_vit_pretrain', help='where to save the dataset')
-    parser.add_argument('--alternate_models', nargs='+', type=str, help='join multiple model embeddings with original model embeddings')
+    parser.add_argument('--dataset_path', type=str, default='./adv_datasets/ciless_advvit_resnet_output', help='where to save the dataset')
+    parser.add_argument('--alternate_models', nargs='+', type=str, default="resnet32-cifar10" help='join multiple model embeddings with original model embeddings')
     args = parser.parse_args()
     main(args.dataset, args.model, args.img_prefix, args.dataset_path, args.alternate_models)
 

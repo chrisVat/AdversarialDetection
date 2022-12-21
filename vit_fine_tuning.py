@@ -196,12 +196,12 @@ def main(dataset:str, model_name:str, epochs:int, learning_rate:float, batch_siz
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Train a model on a dataset')
-    parser.add_argument('--dataset', type=str, default='ciless', help='Dataset to train on')
-    parser.add_argument('--model', type=str, default='vit_pretrained_mlp', help='Model to train')
+    parser.add_argument('--dataset', type=str, default='ciless_vit_embedding', help='Dataset to train on')
+    parser.add_argument('--model', type=str, default='mlp', help='Model to train')
     parser.add_argument('--output_prefix', type=str, default='', help='Prefix to add to model name, to avoid overlapping experiments.')
     parser.add_argument('--epochs', type=int, default=150, help='Number of epochs to train')
-    parser.add_argument('--learning_rate', type=float, default=3e-5, help='Learning rate')
-    parser.add_argument('--batch_size', type=int, default=32, help='Batch size')
+    parser.add_argument('--learning_rate', type=float, default=1e-2, help='Learning rate')
+    parser.add_argument('--batch_size', type=int, default=128, help='Batch size')
     parser.add_argument('--steps_per_update', type=int, default=4, help='Number of steps per each epoch (For minibatching to save memory)')
     parser.add_argument('--sched_decay', type=float, default=0.5, help='Scheduler Decay')
     parser.add_argument('--step_size', type=int, default=50, help='Step Size For Scheduler')
