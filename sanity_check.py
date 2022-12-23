@@ -9,6 +9,8 @@ import os
 import argparse
 import networks.resnet as resnet
 import timm
+import numpy as np
+import matplotlib.pyplot as plt
 
 # makes things look nice
 from progress_bar import progress_bar
@@ -32,20 +34,21 @@ def get_MLP(in_dim, out_dim):
 
 def get_dataset(name, batch_size):
     if name == 'cifar10':
-        transform = transforms.Compose([transforms.RandomCrop(32, padding=4),
-            transforms.Resize(224),
-            transforms.RandomHorizontalFlip(),
+        transform = transforms.Compose([# transforms.RandomCrop(32, padding=4),
+            # transforms.Resize(224),
+            # transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),  
-            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))])
+            # transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
+            ])
         trainset = torchvision.datasets.CIFAR10(root='./data/raw_data', train=True, download=True, transform=transform)
-        trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=2, drop_last=True)
+        trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=False, num_workers=2, drop_last=True)
         testset = torchvision.datasets.CIFAR10(root='./data/raw_data', train=False, download=True, transform=transform)
         testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=2, drop_last=True)
         classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
     elif name == 'ciless':
         transform = transforms.Compose([ # transforms.Resize(224),
             # transforms.RandomHorizontalFlip(),
-            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
+            # transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
             ])
         trainset = AdversarialDataset("adv_datasets/cifar_10_resnet_32_fgsm/cifar_10_resnet_32_fgsm_train/mapping.csv", "adv_datasets/cifar_10_resnet_32_fgsm/cifar_10_resnet_32_fgsm_train", transform=transform)
         testset = AdversarialDataset("adv_datasets/cifar_10_resnet_32_fgsm/cifar_10_resnet_32_fgsm_test/mapping.csv", "adv_datasets/cifar_10_resnet_32_fgsm/cifar_10_resnet_32_fgsm_test", transform=transform)
@@ -145,24 +148,49 @@ def test(epoch, max_epochs, net, testloader, criterion, device):
     test_loss = 0
     correct = 0
     total = 0
+
+    i = 0
     with torch.no_grad():
         for batch_idx, (inputs, targets) in enumerate(testloader):
-            inputs, targets = inputs.to(device), targets.to(device)
+            file_name = "./adv_datasets/cifar_10_resnet_32_fgsm_train/cf10_32_" + str(i) + ".npy"
+            i+=2
+            np_img = np.load(file_name)
+            input_np = torch.from_numpy(np_img)
+            # inputs = transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))(inputs)
             
-            outputs = net(inputs)
-            loss = criterion(outputs, targets)
+            if len(input_np.shape) > 3:
+                input_np = input_np.squeeze(0)
+            print(input_np.shape)
 
-            test_loss += loss.item()
-            _, predicted = outputs.max(1)
-            print("pred: ", predicted)
-            print("target: ", targets)
-            print("\n")
-            total += targets.size(0)
-            correct += predicted == targets 
+            # display_image(input_np)
 
-            progress_bar(epoch, max_epochs, batch_idx, len(testloader), 'Loss: %.3f   Acc: %.3f%%'
-                         % (test_loss/(batch_idx+1), 100.*correct/total))
-    return float(correct)/total
+            plt.imshow(input_np.cpu().permute(1, 2, 0))
+            plt.show()
+            plt.imshow(inputs.squeeze(0).cpu().numpy().transpose(1, 2, 0))
+            plt.show()
+
+
+            # print(inputs.shape)
+            
+            # predicted = net(inputs).argmax(axis=1).item()
+            
+            # outputs = net(inputs)
+            # loss = criterion(outputs, targets)
+
+            # test_loss += loss.item()
+            # _, predicted = outputs.max(1)
+            
+            # print("pred: ", predicted)
+            # print("target: ", targets)
+            # print("\n")
+            # total += targets.size(0)
+            # correct += predicted == targets 
+
+            # progress_bar(epoch, max_epochs, batch_idx, len(testloader), 'Loss: %.3f   Acc: %.3f%%'
+            #              % (test_loss/(batch_idx+1), 100.*correct/total))
+            if batch_idx >= 4:
+                break
+    return 1 # float(correct)/total
 
 
 def fit_model(model, trainloader, testloader, device, epochs:int, learning_rate:float, sched_decay:float, step_size:int, save_path:str, steps_per_update:int):
@@ -176,8 +204,9 @@ def fit_model(model, trainloader, testloader, device, epochs:int, learning_rate:
     # scaler = torch.cuda.amp.GradScaler(enabled=True)
 
     for epoch in range(epochs):
-        train(epoch, epochs, model, trainloader, optimizer, scheduler, criterion, device, steps_per_update)
-        acc = test(epoch, epochs, model, testloader, criterion, device)
+        # train(epoch, epochs, model, trainloader, optimizer, scheduler, criterion, device, steps_per_update)
+        acc = test(epoch, epochs, model, trainloader, criterion, device)
+        break
         if acc > best_acc:
             if best_name != "":
                 os.remove(best_name)
@@ -203,12 +232,12 @@ def main(dataset:str, model_name:str, epochs:int, learning_rate:float, batch_siz
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Train a model on a dataset')
-    parser.add_argument('--dataset', type=str, default='ciless', help='Dataset to train on')
-    parser.add_argument('--model', type=str, default='vit_pretrained_mlp', help='Model to train')
+    parser.add_argument('--dataset', type=str, default='cifar10', help='Dataset to train on')
+    parser.add_argument('--model', type=str, default='resnet32-cifar10', help='Model to train')
     parser.add_argument('--output_prefix', type=str, default='', help='Prefix to add to model name, to avoid overlapping experiments.')
-    parser.add_argument('--epochs', type=int, default=400, help='Number of epochs to train')
-    parser.add_argument('--learning_rate', type=float, default=5e-2, help='Learning rate')
-    parser.add_argument('--batch_size', type=int, default=128, help='Batch size')
+    parser.add_argument('--epochs', type=int, default=150, help='Number of epochs to train')
+    parser.add_argument('--learning_rate', type=float, default=1e-2, help='Learning rate')
+    parser.add_argument('--batch_size', type=int, default=1, help='Batch size')
     parser.add_argument('--steps_per_update', type=int, default=1, help='Number of steps per each epoch (For minibatching to save memory)')
     parser.add_argument('--sched_decay', type=float, default=0.5, help='Scheduler Decay')
     parser.add_argument('--step_size', type=int, default=50, help='Step Size For Scheduler')
