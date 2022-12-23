@@ -43,10 +43,10 @@ def get_dataset(name, batch_size):
         testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=2, drop_last=True)
         classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
     elif name == 'ciless':
-        transform = transforms.Compose([ # transforms.Resize(224),
+        transform = transforms.Compose([ 
             # transforms.RandomHorizontalFlip(),
-            # transforms.ToTensor(),
-            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
+            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+            transforms.Resize(224),
             ])
         trainset = AdversarialDataset("./adv_datasets/cifar_10_resnet_32_fgsm/cifar_10_resnet_32_fgsm_train/mapping.csv", "adv_datasets/cifar_10_resnet_32_fgsm/cifar_10_resnet_32_fgsm_train", transform=transform)
         testset = AdversarialDataset("./adv_datasets/cifar_10_resnet_32_fgsm/cifar_10_resnet_32_fgsm_test/mapping.csv", "adv_datasets/cifar_10_resnet_32_fgsm/cifar_10_resnet_32_fgsm_test", transform=transform)
@@ -209,12 +209,12 @@ def main(dataset:str, model_name:str, epochs:int, learning_rate:float, batch_siz
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Train a model on a dataset')
     parser.add_argument('--dataset', type=str, default='ciless', help='Dataset to train on')
-    parser.add_argument('--model', type=str, default='resnet32-cifar10', help='Model to train')
+    parser.add_argument('--model', type=str, default='vit', help='Model to train')
     parser.add_argument('--output_prefix', type=str, default='', help='Prefix to add to model name, to avoid overlapping experiments.')
     parser.add_argument('--epochs', type=int, default=400, help='Number of epochs to train')
     parser.add_argument('--learning_rate', type=float, default=5e-2, help='Learning rate')
-    parser.add_argument('--batch_size', type=int, default=128, help='Batch size')
-    parser.add_argument('--steps_per_update', type=int, default=1, help='Number of steps per each epoch (For minibatching to save memory)')
+    parser.add_argument('--batch_size', type=int, default=1, help='Batch size')
+    parser.add_argument('--steps_per_update', type=int, default=8, help='Number of steps per each epoch (For minibatching to save memory)')
     parser.add_argument('--sched_decay', type=float, default=0.5, help='Scheduler Decay')
     parser.add_argument('--step_size', type=int, default=50, help='Step Size For Scheduler')
     parser.add_argument('--load', type=bool, default=True, help='Load best model')
