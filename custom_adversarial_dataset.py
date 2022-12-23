@@ -19,9 +19,8 @@ class AdversarialDataset(Dataset):
 		self.cifar_trainset = torchvision.datasets.CIFAR10(root='./data/raw_data', train=True, download=True)
 		self.cifar_testset = torchvision.datasets.CIFAR10(root='./data/raw_data', train=False, download=True)
 		if self.training:
-			self.loader = torch.utils.data.DataLoader(self.cifar_trainset, batch_size=1, shuffle=False, num_workers=2, drop_last=True)
-		else:
-			self.loader = torch.utils.data.DataLoader(self.cifar_testset, batch_size=1, shuffle=False, num_workers=2, drop_last=True)
+			self.loader = self.cifar_trainset
+			self.loader = self.cifar_testset
 
 
 	def __getitem__(self, index):
@@ -29,10 +28,10 @@ class AdversarialDataset(Dataset):
 			index = index.tolist()
 
 		if index %2 == 1:
-			img_val = self.cifar_trainset[index//2][0]
+			img_val = self.loader[index//2][0]
 			img = transforms.ToTensor()(img_val)
-			img = self.cifar_transform(img)
-			return img, self.cifar_trainset[index//2][1]
+			img = self.loader(img)
+			return img, self.loader[index//2][1]
 		else:
 			fetched_row = self.data_info.iloc[index]
 			img = torchvision.io.read_image(self.data_path + "/" + fetched_row[1]).float()
