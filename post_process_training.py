@@ -35,16 +35,15 @@ def get_MLP(in_dim, out_dim):
 class DualMLP(nn.Module):
     def __init__(self, in_dim1, in_dim2, intermediate_dim, out_dim):
         super(DualMLP, self).__init__()
-        # self.mlp1 = get_MLP(in_dim1, intermediate_dim)
-        self.mlp1 = get_MLP(in_dim1, out_dim)
+        self.mlp1 = get_MLP(in_dim1, intermediate_dim)
         self.mlp2 = get_MLP(in_dim2, intermediate_dim)
         self.mlp3 = get_MLP(intermediate_dim, out_dim)
     
     def forward(self, x1, x2):
+        x1 = nn.Softmax(dim=1)(x1)
         val1 = self.mlp1(x1)
-        # val2 = self.mlp2(x2)
-        # val1+=val2
-        return val1
+        val2 = self.mlp2(x2)
+        val1+=val2
         return self.mlp3(val1)
 
 
@@ -64,7 +63,6 @@ def get_dataset(name, batch_size):
 def get_model(model:str, num_classes:int, load=False):
     if model == "dual_mlp":
         dual_mlp = DualMLP(768, 10, 1500, num_classes)
-        return get_MLP(768, num_classes)
         return dual_mlp
     else:
         raise ValueError('Unknown model: {}'.format(model))
@@ -81,8 +79,8 @@ def train(epoch, max_epochs, net, trainloader, optimizer, scheduler, criterion, 
         # tepoch.set_description(f"[Epoch {epoch}/{max_epochs}]")
     for batch_idx, (vit, targets, cifar) in enumerate(trainloader):
         vit, targets, cifar = vit.to(device), targets.to(device), cifar.to(device)
-        outputs = net(vit)
-        # outputs = net(vit, cifar)
+        # outputs = net(vit)
+        outputs = net(vit, cifar)
         loss = criterion(outputs, targets)
         loss.backward()
         step += 1
@@ -169,7 +167,7 @@ if __name__ == "__main__":
     parser.add_argument('--output_prefix', type=str, default='', help='Prefix to add to model name, to avoid overlapping experiments.')
     parser.add_argument('--epochs', type=int, default=400, help='Number of epochs to train')
     parser.add_argument('--learning_rate', type=float, default=1e-2, help='Learning rate')
-    parser.add_argument('--batch_size', type=int, default=256, help='Batch size')
+    parser.add_argument('--batch_size', type=int, default=128, help='Batch size')
     parser.add_argument('--steps_per_update', type=int, default=1, help='Number of steps per each epoch (For minibatching to save memory)')
     parser.add_argument('--sched_decay', type=float, default=0.5, help='Scheduler Decay')
     parser.add_argument('--step_size', type=int, default=50, help='Step Size For Scheduler')

@@ -19,7 +19,7 @@ class AdversarialDataset(Dataset):
 
 		fetched_row = self.data_info.iloc[index]
 		img = torchvision.io.read_image(self.data_path + "/" + fetched_row[1]).float()
-		target = fetched_row[3]
+		target = fetched_row[2]
 		if self.transform:
 			img = self.transform(img)
 		return img, target

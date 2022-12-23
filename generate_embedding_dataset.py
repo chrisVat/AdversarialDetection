@@ -62,6 +62,7 @@ def save_embedding(img, img_prefix, img_num, path, mapping, target, alternate_em
     mapping["file"].append(img_prefix + str(img_num) + ".npy")
     mapping["y"].append(target)
     
+    '''
     if len(alternate_embeddings) != 0:
         file_names = {}
         for name, embedding in alternate_embeddings.items():
@@ -70,9 +71,10 @@ def save_embedding(img, img_prefix, img_num, path, mapping, target, alternate_em
             file_names[name] = file_name
 
         mapping["alternate_embeddings"].append(file_names)
-    print(mapping)
+    '''
+    # print(mapping)
 
-def get_model(model:str, num_classes:int, load=True):
+def get_model(model:str, num_classes:int, load=False):
     if model == 'resnet18':
         result = torchvision.models.resnet18(num_classes=num_classes)
         result.conv1 = nn.Conv2d(3, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
@@ -107,13 +109,14 @@ def get_model(model:str, num_classes:int, load=True):
 
 
 def generate_dataset_fb(net, dataloader, device, img_prefix:str, path:str, alternate_models):
-    results = {"file": [], "y": [], "alternate_embeddings":[]}
+    results = {"file": [], "y": []}
     eps = []
     img_num = 0
     for batch_idx, (inputs, targets) in enumerate(dataloader):
         inputs, targets = inputs.to(device), targets.to(device)
         embedding = net(inputs)
-        alternate_embeddings = dict(map(lambda item: (item[0], item[1](inputs)), alternate_models.items()))
+        # alternate_embeddings = dict(map(lambda item: (item[0], item[1](inputs)), alternate_models.items()))
+        alternate_embeddings = None
         save_embedding(embedding, img_prefix, img_num, path, results, targets.cpu().item(), alternate_embeddings)
         img_num+=1
     
@@ -153,9 +156,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Generates an adversarial dataset')
     parser.add_argument('--dataset', type=str, default='ciless', help='Dataset')
     parser.add_argument('--model', type=str, default='vit', help='Model')
-    parser.add_argument('--img_prefix', type=str, default='ciless_emb_', help='')
-    parser.add_argument('--dataset_path', type=str, default='./adv_datasets/ciless_advvit_resnet_output', help='where to save the dataset')
-    parser.add_argument('--alternate_models', nargs='+', type=str, default="resnet32-cifar10" help='join multiple model embeddings with original model embeddings')
+    parser.add_argument('--img_prefix', type=str, default='ciless_imagenet_vit', help='')
+    parser.add_argument('--dataset_path', type=str, default='./adv_datasets/ciless_iamgenet_vit_embed', help='where to save the dataset')
+    parser.add_argument('--alternate_models', nargs='+', type=str, default="", help='join multiple model embeddings with original model embeddings')
     args = parser.parse_args()
     main(args.dataset, args.model, args.img_prefix, args.dataset_path, args.alternate_models)
 
