@@ -13,15 +13,15 @@ class AdversarialDataset(Dataset):
 		self.data_len = len(self.data_info)
 		self.data_path = data_path
 
-		self.training = data_path.contains("train")
-		self.cifar_transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))])
+		self.training = "train" in data_path
+		self.cifar_transform = transforms.Compose([transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))])
 		
-		self.cifar_trainset = torchvision.datasets.CIFAR10(root='./data/raw_data', train=True, download=True, transform=self.cifar_transform)
-		self.testset = torchvision.datasets.CIFAR10(root='./data/raw_data', train=False, download=True, transform=transform)
+		self.cifar_trainset = torchvision.datasets.CIFAR10(root='./data/raw_data', train=True, download=True)
+		self.cifar_testset = torchvision.datasets.CIFAR10(root='./data/raw_data', train=False, download=True)
 		if self.training:
-			self.loader = torch.utils.data.DataLoader(self.trainset, batch_size=self.batch_size, shuffle=False, num_workers=2, drop_last=True)
+			self.loader = torch.utils.data.DataLoader(self.cifar_trainset, batch_size=1, shuffle=False, num_workers=2, drop_last=True)
 		else:
-			self.loader = torch.utils.data.DataLoader(self.testset, batch_size=self.batch_size, shuffle=False, num_workers=2, drop_last=True)
+			self.loader = torch.utils.data.DataLoader(self.cifar_testset, batch_size=1, shuffle=False, num_workers=2, drop_last=True)
 
 
 	def __getitem__(self, index):
@@ -29,7 +29,10 @@ class AdversarialDataset(Dataset):
 			index = index.tolist()
 
 		if index %2 == 1:
-			return self.loader[index//2], 0
+			img_val = self.cifar_trainset[index//2][0]
+			img = transforms.ToTensor()(img_val)
+			img = self.cifar_transform(img)
+			return img, self.cifar_trainset[index//2][1]
 		else:
 			fetched_row = self.data_info.iloc[index]
 			img = torchvision.io.read_image(self.data_path + "/" + fetched_row[1]).float()

@@ -45,10 +45,11 @@ def get_dataset(name, batch_size):
     elif name == 'ciless':
         transform = transforms.Compose([ # transforms.Resize(224),
             # transforms.RandomHorizontalFlip(),
+            # transforms.ToTensor(),
             transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
             ])
-        trainset = AdversarialDataset("adv_datasets/cifar_10_resnet_32_fgsm/cifar_10_resnet_32_fgsm_train/mapping.csv", "adv_datasets/cifar_10_resnet_32_fgsm/cifar_10_resnet_32_fgsm_train", transform=transform)
-        testset = AdversarialDataset("adv_datasets/cifar_10_resnet_32_fgsm/cifar_10_resnet_32_fgsm_test/mapping.csv", "adv_datasets/cifar_10_resnet_32_fgsm/cifar_10_resnet_32_fgsm_test", transform=transform)
+        trainset = AdversarialDataset("./adv_datasets/cifar_10_resnet_32_fgsm/cifar_10_resnet_32_fgsm_train/mapping.csv", "adv_datasets/cifar_10_resnet_32_fgsm/cifar_10_resnet_32_fgsm_train", transform=transform)
+        testset = AdversarialDataset("./adv_datasets/cifar_10_resnet_32_fgsm/cifar_10_resnet_32_fgsm_test/mapping.csv", "adv_datasets/cifar_10_resnet_32_fgsm/cifar_10_resnet_32_fgsm_test", transform=transform)
         trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=2, drop_last=True)
         testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=2, drop_last=True)
         classes = ('adversrial', 'clean')
@@ -146,22 +147,26 @@ def test(epoch, max_epochs, net, testloader, criterion, device):
     correct = 0
     total = 0
     with torch.no_grad():
-        for batch_idx, (inputs, targets) in enumerate(testloader):
-            inputs, targets = inputs.to(device), targets.to(device)
-            
-            outputs = net(inputs)
-            loss = criterion(outputs, targets)
+        with tqdm(testloader) as tepoch: 
+            tepoch.set_description(f"[Epoch {epoch}/{max_epochs}]")
+            for batch_idx, (inputs, targets) in enumerate(tepoch):
+                inputs, targets = inputs.to(device), targets.to(device)
+                
+                outputs = net(inputs)
+                loss = criterion(outputs, targets)
 
-            test_loss += loss.item()
-            _, predicted = outputs.max(1)
-            print("pred: ", predicted)
-            print("target: ", targets)
-            print("\n")
-            total += targets.size(0)
-            correct += predicted == targets 
+                test_loss += loss.item()
+                _, predicted = outputs.max(1)
+                print("pred: ", predicted)
+                print("target: ", targets)
+                print("\n")
+                total += targets.size(0)
+                correct += predicted == targets 
+                # display tqdm accuracy
+                tepoch.set_postfix(loss=test_loss/(batch_idx+1), accuracy_test=100.*correct/total)
 
-            progress_bar(epoch, max_epochs, batch_idx, len(testloader), 'Loss: %.3f   Acc: %.3f%%'
-                         % (test_loss/(batch_idx+1), 100.*correct/total))
+
+
     return float(correct)/total
 
 
@@ -204,7 +209,7 @@ def main(dataset:str, model_name:str, epochs:int, learning_rate:float, batch_siz
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Train a model on a dataset')
     parser.add_argument('--dataset', type=str, default='ciless', help='Dataset to train on')
-    parser.add_argument('--model', type=str, default='vit_pretrained_mlp', help='Model to train')
+    parser.add_argument('--model', type=str, default='resnet32-cifar10', help='Model to train')
     parser.add_argument('--output_prefix', type=str, default='', help='Prefix to add to model name, to avoid overlapping experiments.')
     parser.add_argument('--epochs', type=int, default=400, help='Number of epochs to train')
     parser.add_argument('--learning_rate', type=float, default=5e-2, help='Learning rate')
