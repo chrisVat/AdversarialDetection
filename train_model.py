@@ -35,7 +35,6 @@ def get_dataset(name):
         testset = torchvision.datasets.CIFAR100(root='./data/raw_data', train=False, download=True, transform=transform)
         testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=2)
         classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
-    # Todo, add german dataset
     else:
         raise ValueError('Unknown dataset: {}'.format(name))
     return trainloader, testloader, classes
@@ -106,7 +105,6 @@ def fit_model(model, trainloader, testloader, device, epochs:int, learning_rate:
     best_name = ""
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=1e-4)
-    # scheduler = optim.lr_scheduler.StepLR(optimizer, step_size, sched_decay)
     scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, 0.1, epochs=epochs, steps_per_epoch=len(trainloader))
     
     for epoch in range(epochs):

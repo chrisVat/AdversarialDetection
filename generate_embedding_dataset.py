@@ -102,7 +102,6 @@ def get_model(model:str, num_classes:int, load=False):
         for param in beit.parameters():
             param.requires_grad = False
         beit.head = get_MLP(768, num_classes)
-        # vit.head = nn.Sequential(nn.Linear(768, 1000), nn.Linear(1000, 500), nn.Linear(500, 100), nn.Linear(100, num_classes))
         return beit
     return result
 
@@ -115,7 +114,6 @@ def generate_dataset_fb(net, dataloader, device, img_prefix:str, path:str, alter
     for batch_idx, (inputs, targets) in enumerate(dataloader):
         inputs, targets = inputs.to(device), targets.to(device)
         embedding = net(inputs)
-        # alternate_embeddings = dict(map(lambda item: (item[0], item[1](inputs)), alternate_models.items()))
         alternate_embeddings = None
         save_embedding(embedding, img_prefix, img_num, path, results, targets.cpu().item(), alternate_embeddings)
         img_num+=1

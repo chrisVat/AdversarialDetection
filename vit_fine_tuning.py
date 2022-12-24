@@ -44,7 +44,6 @@ def get_dataset(name, batch_size):
         classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
     elif name == 'ciless':
         transform = transforms.Compose([ 
-            # transforms.RandomHorizontalFlip(),
             transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
             transforms.Resize(224),
             ])
@@ -87,14 +86,14 @@ def get_model(model:str, num_classes:int, load=False):
             vit.load_state_dict(torch.load('trained_models/best_models/vit/cifar10_vit_30.pth'))
         for param in vit.parameters():
             param.requires_grad = False
-        vit.head = get_MLP(768, num_classes) # nn.Sequential(nn.Linear(768, 1000), nn.Linear(1000, 500), nn.Linear(500, 100), nn.Linear(100, num_classes))
+        vit.head = get_MLP(768, num_classes) 
         return vit
     elif model == 'vit_pretrained_mlp':
         vit = timm.create_model('vit_base_patch16_224', pretrained=True, num_classes=num_classes)
         if load:
             vit.head = nn.Linear(768, 10)
             vit.load_state_dict(torch.load('trained_models/best_models/vit/cifar10_vit_30.pth'))
-        vit.head = get_MLP(768, num_classes) # nn.Sequential(nn.Linear(768, 1000), nn.Linear(1000, 500), nn.Linear(500, 100), nn.Linear(100, num_classes))
+        vit.head = get_MLP(768, num_classes) 
         if load:
             vit.head.load_state_dict(torch.load('trained_models/best_models/vit_embedding_mlp/ciless_pretrained_vit_embedding_mlp_342.pth'))
             vit.load_state_dict(torch.load('trained_models/best_models/vit_embedding_mlp/ciless_vit_pretrained_mlp_joint_train_initial_106.pth'))
@@ -104,7 +103,6 @@ def get_model(model:str, num_classes:int, load=False):
         for param in beit.parameters():
             param.requires_grad = False
         beit.head = get_MLP(768, num_classes)
-        # vit.head = nn.Sequential(nn.Linear(768, 1000), nn.Linear(1000, 500), nn.Linear(500, 100), nn.Linear(100, num_classes))
         return beit
     elif model == "mlp":
         mlp = get_MLP(768, num_classes)
@@ -123,7 +121,6 @@ def train(epoch, max_epochs, net, trainloader, optimizer, scheduler, criterion, 
     for batch_idx, (inputs, targets) in enumerate(trainloader):
         inputs, targets = inputs.to(device), targets.to(device)
         outputs = net(inputs)
-        # scheduler.step()
         loss = criterion(outputs, targets)
         loss.backward()
         step += 1
@@ -175,10 +172,7 @@ def fit_model(model, trainloader, testloader, device, epochs:int, learning_rate:
     best_name = ""
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=1e-4)
-    # optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=1e-4)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size, sched_decay)
-    # scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, learning_rate, epochs=epochs, steps_per_epoch=len(trainloader))
-    # scaler = torch.cuda.amp.GradScaler(enabled=True)
 
     for epoch in range(epochs):
         train(epoch, epochs, model, trainloader, optimizer, scheduler, criterion, device, steps_per_update)

@@ -75,11 +75,8 @@ def train(epoch, max_epochs, net, trainloader, optimizer, scheduler, criterion, 
     total = 0
     steps_per_update = 1
     step = 0
-    # with tqdm(trainloader, unit="batch") as tepoch: 
-        # tepoch.set_description(f"[Epoch {epoch}/{max_epochs}]")
     for batch_idx, (vit, targets, cifar) in enumerate(trainloader):
         vit, targets, cifar = vit.to(device), targets.to(device), cifar.to(device)
-        # outputs = net(vit)
         outputs = net(vit, cifar)
         loss = criterion(outputs, targets)
         loss.backward()
@@ -93,11 +90,8 @@ def train(epoch, max_epochs, net, trainloader, optimizer, scheduler, criterion, 
         _, predicted = outputs.max(1)
         total += targets.size(0)
         correct += predicted.eq(targets).sum().item()
-            # tepoch.set_postfix(loss=train_loss/(batch_idx+1), accuracy_training=100.*correct/total)
         progress_bar(epoch, max_epochs, batch_idx, len(trainloader), 'Loss: %.3f   Acc: %.3f%%'
                      % (train_loss/(batch_idx+1), 100.*correct/total))
-
-    # scheduler.step()
 
 
 def test(epoch, max_epochs, net, testloader, criterion, device):
@@ -105,8 +99,6 @@ def test(epoch, max_epochs, net, testloader, criterion, device):
     test_loss = 0
     correct = 0
     total = 0
-    # with tqdm(testloader, unit="batch") as tepoch: 
-        # tepoch.set_description(f"[Epoch {epoch}/{max_epochs}]")
     with torch.no_grad():
         for batch_idx, (vit, targets, cifar) in enumerate(testloader):
             vit, targets, cifar = vit.to(device), targets.to(device), cifar.to(device)
@@ -119,7 +111,6 @@ def test(epoch, max_epochs, net, testloader, criterion, device):
             correct += predicted.eq(targets).sum().item()
             progress_bar(epoch, max_epochs, batch_idx, len(testloader), 'Loss: %.3f   Acc: %.3f%%'
                          % (test_loss/(batch_idx+1), 100.*correct/total))
-                # tepoch.set_postfix(loss=test_loss/(batch_idx+1), accuracy_testing=100.*correct/total)
 
     return float(correct)/total
 
@@ -129,10 +120,7 @@ def fit_model(model, trainloader, testloader, device, epochs:int, learning_rate:
     best_name = ""
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=1e-4)
-    # optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=1e-4)
-    # scheduler = optim.lr_scheduler.StepLR(optimizer, step_size, sched_decay)
     scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, learning_rate, epochs=epochs, steps_per_epoch=len(trainloader))
-    # scaler = torch.cuda.amp.GradScaler(enabled=True)
 
     for epoch in range(epochs):
         train(epoch, epochs, model, trainloader, optimizer, scheduler, criterion, device, steps_per_update)

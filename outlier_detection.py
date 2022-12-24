@@ -9,12 +9,6 @@ from sklearn.ensemble import IsolationForest
 from sklearn.covariance import EllipticEnvelope
 
 
-# from sklearn.ensemble import IsolationForest
-# from sklearn.svm import OneClassSVM
-# from sklearn.covariance import EllipticEnvelope
-# from sklearn.metrics import roc_auc_score
-
-
 print("Converting to numpy arrays...")
 clean_data_train = []
 adversarial_data_train = []
@@ -111,19 +105,14 @@ def test_method_combined(method, clean_data_train, adversarial_data_train, clean
 
 
 dataset = "ciless_embeddings_vit_pretrain"
-# dataset = "ciless_imagenet_vit_embed"
 
 clean_data_train, adversarial_data_train, clean_data_test, adversarial_data_test = get_data(dataset)
 solo_methods = {
-    # "LocalOutlierFactor": LocalOutlierFactor(n_neighbors=20, contamination=0.0001, novelty=True),
-    # "OneClassSVM": svm.OneClassSVM(nu=0.1, kernel="rbf", gamma=0.1),
     "IsolationForest": IsolationForest(contamination=0.0001, random_state=0),
     "EllipticEnvelope": EllipticEnvelope(contamination=0.0001)
 }
 
 combined_methods = {
-    # "LocalOutlierFactor": LocalOutlierFactor(n_neighbors=20, contamination=0.5, novelty=True),
-    # "OneClassSVM": svm.OneClassSVM(nu=0.1, kernel="rbf", gamma=0.1),
     "IsolationForest": IsolationForest(contamination=0.5, random_state=0),
     "EllipticEnvelope": EllipticEnvelope(contamination=0.5)
 }

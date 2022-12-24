@@ -8,9 +8,6 @@ import os
 import argparse
 import networks.resnet as resnet
 import numpy as np
-# from art.attacks.evasion import BrendelBethgeAttack
-# from art.attacks.evasion import FastGradientMethod
-# from art.estimators.classification import PyTorchClassifier
 import foolbox as fb
 
 import pandas as pd
@@ -53,33 +50,12 @@ def get_model(model:str):
 
 
 def save_image(img, img_prefix, img_num, path, mapping, target, actual_class, model_pred):
-    # uint8_img = (img * 255).astype(np.uint8)
-    # if len(uint8_img.shape) > 3:
-    #     uint8_img = uint8_img[0]
-    
     np.save(path + "/" + img_prefix + str(img_num) + ".npy", img)
-    
-    # im = Image.fromarray(uint8_img.transpose(1, 2, 0))
-    # im.save(path + "/" + img_prefix + str(img_num) + ".png")
-    
-    # np.save(path + "/" + img_prefix + str(img_num) + ".npy", img)
-    # img.save(path + "/" + img_prefix + str(img_num) + ".png")
     mapping["file"].append(img_prefix + str(img_num) + ".png")
     mapping["y"].append(target)
     mapping["class"].append(actual_class)
     mapping["model_pred"].append(model_pred)
     
-
-
-# def fgsm_attack(image, epsilon, data_grad):
-#     # Collect the element-wise sign of the data gradient
-#     sign_data_grad = data_grad.sign()
-#     # Create the perturbed image by adjusting each pixel of the input image
-#     perturbed_image = image + epsilon*sign_data_grad
-#     # Adding clipping to maintain [0,1] range
-#     perturbed_image = torch.clamp(perturbed_image, 0, 1)
-#     # Return the perturbed image
-#     return perturbed_image
 
 
 def get_prediction(net, input_img):
@@ -119,9 +95,6 @@ def generate_dataset_fb(net, dataloader, technique, device, img_prefix:str, path
         success[-1] = True
         for i in range(len(success)):
             if success[i]:
-                # view_prediction(net, clipped_advs[i], targets[0], prefix='adversarial_clipped: ')
-                # view_prediction(net, raw_advs[i], targets[0], prefix='adversarial raw: ')
-                # view_prediction(net, inputs, targets[0], prefix='original: ')
                 o_pred = get_prediction(net, inputs)
                 a_pred = get_prediction(net, clipped_advs[i])
                 save_image(clipped_advs[i].cpu().numpy(), img_prefix, img_num, path, results, targets.cpu().item(), 1, a_pred)
