@@ -1,3 +1,7 @@
+"""
+Generate Embeddings from the Model activations for input images.
+"""
+
 from custom_adversarial_dataset import AdversarialDataset
 import torch
 import torch.nn as nn

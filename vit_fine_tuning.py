@@ -1,3 +1,7 @@
+"""
+This is where the magic happens, train and fine tune your models! 
+"""
+
 from custom_adversarial_dataset import AdversarialDataset
 from custom_embedding_dataset import EmbeddingDataset
 import torch

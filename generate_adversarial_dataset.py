@@ -1,3 +1,6 @@
+"""
+Generate an Adversarial Dataset by running FGSM attack on CIFAR-10 dataset.
+"""
 
 import torch
 import torch.nn as nn
@@ -50,7 +53,13 @@ def get_model(model:str):
 
 
 def save_image(img, img_prefix, img_num, path, mapping, target, actual_class, model_pred):
-    np.save(path + "/" + img_prefix + str(img_num) + ".npy", img)
+    uint8_img = (img * 255).astype(np.uint8)
+    if len(uint8_img.shape) > 3:
+        uint8_img = uint8_img[0]
+    
+    im = Image.fromarray(uint8_img.transpose(1, 2, 0))
+    im.save(path + "/" + img_prefix + str(img_num) + ".png")
+    
     mapping["file"].append(img_prefix + str(img_num) + ".png")
     mapping["y"].append(target)
     mapping["class"].append(actual_class)

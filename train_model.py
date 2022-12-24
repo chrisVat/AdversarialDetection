@@ -1,4 +1,4 @@
-# This will be useful for training on German dataset
+# This will be useful for training on CIFAR dataset
 
 #important imports
 # install torch from here https://pytorch.org/ 
