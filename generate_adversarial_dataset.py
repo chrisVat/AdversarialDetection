@@ -8,9 +8,9 @@ import os
 import argparse
 import networks.resnet as resnet
 import numpy as np
-from art.attacks.evasion import BrendelBethgeAttack
-from art.attacks.evasion import FastGradientMethod
-from art.estimators.classification import PyTorchClassifier
+# from art.attacks.evasion import BrendelBethgeAttack
+# from art.attacks.evasion import FastGradientMethod
+# from art.estimators.classification import PyTorchClassifier
 import foolbox as fb
 
 import pandas as pd
@@ -45,7 +45,7 @@ def get_dataset(name):
 def get_model(model:str):
     if model == 'resnet32-cifar10':
         result = resnet.resnet32()
-        result.load_state_dict(torch.load('./trained_models/best_models/resnet32-cifar10/cifar10_resnet32-cifar10_99.pth'), strict=True)
+        result.load_state_dict(torch.load('./trained_models/best_models/resnet32-cifar10/cifar10_resnet32-cifar10_99.pth', map_location=torch.device('cpu')), strict=True)
         result.eval()
     else:
         raise ValueError('Unknown model: {}'.format(model))
@@ -53,11 +53,15 @@ def get_model(model:str):
 
 
 def save_image(img, img_prefix, img_num, path, mapping, target, actual_class, model_pred):
-    uint8_img = (img * 255).astype(np.uint8)
-    if len(uint8_img.shape) > 3:
-        uint8_img = uint8_img[0]
-    im = Image.fromarray(uint8_img.transpose(1, 2, 0))
-    im.save(path + "/" + img_prefix + str(img_num) + ".png")
+    # uint8_img = (img * 255).astype(np.uint8)
+    # if len(uint8_img.shape) > 3:
+    #     uint8_img = uint8_img[0]
+    
+    np.save(path + "/" + img_prefix + str(img_num) + ".npy", img)
+    
+    # im = Image.fromarray(uint8_img.transpose(1, 2, 0))
+    # im.save(path + "/" + img_prefix + str(img_num) + ".png")
+    
     # np.save(path + "/" + img_prefix + str(img_num) + ".npy", img)
     # img.save(path + "/" + img_prefix + str(img_num) + ".png")
     mapping["file"].append(img_prefix + str(img_num) + ".png")
@@ -76,29 +80,6 @@ def save_image(img, img_prefix, img_num, path, mapping, target, actual_class, mo
 #     perturbed_image = torch.clamp(perturbed_image, 0, 1)
 #     # Return the perturbed image
 #     return perturbed_image
-
-
-def generate_dataset_art(net, dataloader, technique, device, img_prefix:str, path:str):
-    classifier = PyTorchClassifier(model=net, loss=nn.CrossEntropyLoss(), optimizer=optim.Adam(net.parameters(), lr=0.01), input_shape=(3, 32, 32), nb_classes=10, clip_values=(0, 1), device_type=device)
-    results = {"file": [], "y": [], "class": []}
-
-    if technique == 'bb':
-        attack = BrendelBethgeAttack(estimator=classifier)
-    elif technique == 'fgsm':
-        attack = FastGradientMethod(estimator=classifier, eps=0.01, eps_step=0.1, minimal=True)
-    else:
-        raise ValueError('Unknown attack: {}'.format(technique))
-
-    img_num = 0
-    for batch_idx, (input, target) in enumerate(dataloader):
-        adv = attack.generate(x=input.numpy(), y=target.numpy())
-        save_image(adv, img_prefix, img_num, path, results, target, 1)
-        img_num += 1 
-        save_image(input.numpy(), img_prefix, img_num, path, results, target, 0)
-        img_num += 1
-        progress_bar(1, 1, batch_idx, len(dataloader), '%d / %d' % (batch_idx, len(dataloader)))
-    df = pd.DataFrame.from_dict(results)
-    pd.save_csv(df, path + "/mapping.csv")
 
 
 def get_prediction(net, input_img):
@@ -157,6 +138,7 @@ def main(dataset:str, model_name:str, technique:str, img_prefix:str, dataset_pat
     print("CUDA Available: ", torch.cuda.is_available())
     dataset_path+= "_" + technique
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
     trainloader, testloader, _ = get_dataset(dataset)
     
     model = get_model(model_name)

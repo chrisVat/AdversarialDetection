@@ -113,6 +113,47 @@ class ResNet(nn.Module):
         out = self.linear(out)
         return out
 
+        # function to extact the multiple features
+    def feature_list(self, x):
+        out_list = []
+        out = F.relu(self.bn1(self.conv1(x)))
+        out_list.append(out)
+        out = self.layer1(out)
+        out_list.append(out)
+        out = self.layer2(out)
+        out_list.append(out)
+        out = self.layer3(out)
+        out_list.append(out)
+        out = F.avg_pool2d(out, out.size()[3])
+        out = out.view(out.size(0), -1)
+        y = self.linear(out)
+        return y, out_list
+    
+    # function to extact a specific feature
+    def intermediate_forward(self, x, layer_index):
+        out = F.relu(self.bn1(self.conv1(x)))
+        if layer_index == 1:
+            out = self.layer1(out)
+        elif layer_index == 2:
+            out = self.layer1(out)
+            out = self.layer2(out)
+        elif layer_index == 3:
+            out = self.layer1(out)
+            out = self.layer2(out)
+            out = self.layer3(out)        
+        return out
+
+    # function to extact the penultimate features
+    def penultimate_forward(self, x):
+        out = F.relu(self.bn1(self.conv1(x)))
+        out = self.layer1(out)
+        out = self.layer2(out)
+        penultimate = self.layer3(out)
+        out = F.avg_pool2d(penultimate, out.size()[3])
+        out = out.view(out.size(0), -1)
+        y = self.linear(out)
+        return y, penultimate
+
 
 def resnet20():
     return ResNet(BasicBlock, [3, 3, 3])
